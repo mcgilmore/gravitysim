@@ -1,251 +1,295 @@
-//Config
 math.config({
-    number: 'bignumber', // Default type of number: 'number' (default) or 'bignumber'
-    precision: 30 // Number of significant digits for BigNumbers
+	number: "bignumber",
+	precision: 30,
 });
 
-//Physics constants and functions
-var G = new math.bignumber('6.67384e-11');
-var bodies = [];
-var scale = new math.bignumber('1000000'); //One pixel = 1000km or 1000000m
+const G = math.bignumber("6.67384e-11");
+const scale = math.bignumber("1000000"); // 1 pixel = 1,000 km
+
+let bodies = [];
+let IDcount = 0;
+let paused = false;
+let trajectoryLimit = 100;
+
+function calcDistance(b1, b2) {
+	const dx = math.subtract(
+		math.subset(b1.position, math.index(0)),
+		math.subset(b2.position, math.index(0)),
+	);
+	const dy = math.subtract(
+		math.subset(b1.position, math.index(1)),
+		math.subset(b2.position, math.index(1)),
+	);
+	return math.sqrt(math.add(math.pow(dx, 2), math.pow(dy, 2)));
+}
 
 function calcTotalForce(b1, b2, distance) {
-    return (math.multiply(math.multiply(b1.mass, b2.mass), G) / math.pow(distance, 2));
+	if (math.smaller(distance, math.bignumber("1e-3"))) {
+		return math.bignumber("0"); // Prevent extreme values due to small distances
+	}
+	return math.divide(
+		math.multiply(G, math.multiply(b1.mass, b2.mass)),
+		math.pow(distance, 2),
+	);
 }
 
 function calcXForce(force, angle) {
-    return math.multiply(math.sin(angle), force);
+	return math.multiply(math.cos(angle), force);
 }
 
 function calcYForce(force, angle) {
-    return math.multiply(math.cos(angle), force);
-}
-
-function calcDistance(b1, b2) {
-    var dx = math.subtract(math.subset(b1.position, math.index(0)), math.subset(b2.position, math.index(0)));
-    var dy = math.subtract(math.subset(b1.position, math.index(1)), math.subset(b2.position, math.index(1)));
-
-    return math.sqrt(math.subtract(math.pow(dx, 2), math.pow(dy, 2)));
-}
-
-function calcAcc(force, mass) {
-    return math.divide(force, mass);
+	return math.multiply(math.sin(angle), force);
 }
 
 function calcAngle(b1, b2) {
-    //TODO: fix rounding error
-    var diffX = math.subtract(math.round(math.subset(b1.position, math.index(0))), math.round(math.subset(b2.position, math.index(0))));
-    var diffY = math.subtract(math.round(math.subset(b1.position, math.index(1))), math.round(math.subset(b2.position, math.index(1))));
-
-    console.log(diffX + " " + diffY + " " + math.format(math.atan2(diffX, diffY)));
-
-    return math.divide(math.multiply(math.atan2(diffX, diffY), 180), math.pi);
+	const dx = math.subtract(
+		math.subset(b2.position, math.index(0)),
+		math.subset(b1.position, math.index(0)),
+	);
+	const dy = math.subtract(
+		math.subset(b2.position, math.index(1)),
+		math.subset(b1.position, math.index(1)),
+	);
+	return math.atan2(dy, dx);
 }
 
-function calcTrajectory(i, steptime) { //Returns a math.matrix of the trajectory. i is index in bodies[]
-    var trajectory = [
-        [math.subset(bodies[i].position, math.index(0)), math.subset(bodies[i].position, math.index(1))]
-    ];
-    var force = math.bignumber('0');
-    var totalXForce = math.bignumber('0');
-    var totalYForce = math.bignumber('0');
+function calcAcc(force, mass) {
+	return math.divide(force, mass);
+}
 
-    for (var v = 0; v < trajectoryLimit; v++) {
-        for (var j = 1; j < bodies.length; j++) {
-            //loop through each body that isn't this, add force from calcForce to total force
-            //use total force to calculate total acceleration and subsequently next x / y coord, add to trajectory
-            force = calcTotalForce(bodies[i], bodies[j], calcDistance(bodies[i], bodies[j]));
-            var angle = calcAngle(bodies[i], bodies[j]);
-            totalXForce = math.add(totalXForce, calcXForce(force, angle));
-            totalYForce = math.add(totalYForce, calcYForce(force, angle));
-        }
+function body(radius, mass, x, y, hv, vv, ha, va) {
+	this.radius = radius;
+	this.mass = mass;
+	this.position = math.matrix([x, y]);
+	this.hvelocity = hv;
+	this.vvelocity = vv;
+	this.hacceleration = ha;
+	this.vacceleration = va;
+	this.colour = `hsl(${Math.random() * 360}, 100%, 50%)`;
+	this.ID = IDcount++;
+}
 
-        //Set acceleration to one calculated from total X and Y force
-        var totalHAcc = calcAcc(totalXForce, bodies[i].mass);
-        var totalVAcc = calcAcc(totalYForce, bodies[i].mass);
+function draw(c, b) {
+	const context = c.getContext("2d");
+	console.log("Bodies to draw:", b);
+	// Clear the canvas
+	context.clearRect(0, 0, c.width, c.height);
 
-        //Speed and displacement calcs
-        //S = ut + 0.5at^2
-        var hdistance = math.add(math.multiply(b[i].hvelocity, steptime), math.multiply(math.multiply(0.5, b[i].hacceleration), math.pow(steptime, 2)));
-        var vdistance = math.add(math.multiply(b[i].vvelocity, steptime), math.multiply(math.multiply(0.5, b[i].vacceleration), math.pow(steptime, 2)));
-
-        var newX = math.add(hdistance, math.subset(bodies[i].position, math.index(0))); //NOTE: Possible room for error here with +/- values
-        var newY = math.add(vdistance, math.subset(bodies[i].position, math.index(1)));
-
-        trajectory.push([newX, newY]);
-    }
-
-    return math.matrix(trajectory);
+	// Loop through bodies to draw them
+	for (let i = 0; i < b.length; i++) {
+		//console.log(`Drawing body ${i} at ${b[i].position}`);
+		context.fillStyle = b[i].colour;
+		context.beginPath();
+		context.arc(
+			math.divide(math.subset(b[i].position, math.index(0)), scale), // X position
+			math.divide(math.subset(b[i].position, math.index(1)), scale), // Y position
+			math.divide(b[i].radius, scale), // Radius
+			0,
+			2 * Math.PI,
+		);
+		context.fill();
+	}
 }
 
 function collision(b1, b2) {
-    if (math.compare(calcDistance(b1, b2), math.add(b1.radius, b2.radius)) === -1) { //From website: The function cannot be used to compare values smaller than approximately 2.22e-16
-        return true;
-    } else {
-        return false;
-    }
+	const distance = calcDistance(b1, b2);
+	return math.smallerEq(distance, math.add(b1.radius, b2.radius));
 }
 
-//Other global variables
-var IDcount = 0;
-var chartData = {
-    labels: [],
-    datasets: [{
-        fillColor: "rgba(220,220,220,0.2)",
-        strokeColor: "rgba(220,220,220,1)",
-        pointColor: "rgba(220,220,220,1)",
-        pointStrokeColor: "#fff",
-        pointHighlightFill: "#fff",
-        pointHighlightStroke: "rgba(220,220,220,1)",
-        data: []
-    }, ]
-};
-var graphWriteCount = 0;
-var labelCount = 0;
-var paused = false;
-var trajectoryLimit = 100;
+function mergeBodies(b1, b2) {
+	console.log(`Merging Body ${b1.ID} and Body ${b2.ID}`);
+	b2.merged = true;
 
-//Other functions
-function addBody(x, y) {
-    //r, m, x, y, hv, vv, ha, va
-    var newBody = new body(10, 1000, x, y, 0.4, 0.4, 0, 0);
-    bodies.push(newBody);
+	// Calculate new mass
+	var newMass = math.add(b1.mass, b2.mass);
+
+	// Calculate new position using the weighted average of the two positions based on mass
+	var newX = math.divide(
+		math.add(
+			math.multiply(b1.mass, math.subset(b1.position, math.index(0))),
+			math.multiply(b2.mass, math.subset(b2.position, math.index(0))),
+		),
+		newMass,
+	);
+
+	var newY = math.divide(
+		math.add(
+			math.multiply(b1.mass, math.subset(b1.position, math.index(1))),
+			math.multiply(b2.mass, math.subset(b2.position, math.index(1))),
+		),
+		newMass,
+	);
+
+	// Calculate new velocity based on the conservation of momentum
+	var newHVelocity = math.divide(
+		math.add(
+			math.multiply(b1.mass, b1.hvelocity),
+			math.multiply(b2.mass, b2.hvelocity),
+		),
+		newMass,
+	);
+
+	var newVVelocity = math.divide(
+		math.add(
+			math.multiply(b1.mass, b1.vvelocity),
+			math.multiply(b2.mass, b2.vvelocity),
+		),
+		newMass,
+	);
+
+	// Set new acceleration to the average of the two bodies, or 0 if not defined
+	var newHAcceleration = math.divide(
+		math.add(b1.hacceleration, b2.hacceleration),
+		2,
+	);
+	var newVAcceleration = math.divide(
+		math.add(b1.vacceleration, b2.vacceleration),
+		2,
+	);
+
+	// Create a new body that represents the merged result
+	var mergedBody = new body(
+		b1.radius + b2.radius, // Merge the radii
+		newMass,
+		math.matrix([newX, newY]),
+		newHVelocity, // Use the new horizontal velocity
+		newVVelocity, // Use the new vertical velocity
+		newHAcceleration, // Use the new horizontal acceleration
+		newVAcceleration, // Use the new vertical acceleration
+		(colour = `hsl(${Math.random() * 360}, 100%, 50%)`),
+		(this.ID = IDcount++),
+		(merged = false),
+	);
+	return mergedBody;
 }
 
-function getPosition(canvas) {
-    var x = event.x;
-    var y = event.y;
+function simulation(canvas, bodies, steptime) {
+	this.canvas = canvas;
+	this.steptime = steptime;
 
-    x -= canvas.offsetLeft;
-    y -= canvas.offsetTop;
+	this.step = function () {
+		if (!paused) {
+			for (let i = 0; i < bodies.length; i++) {
+				let totalXForce = math.bignumber("0");
+				let totalYForce = math.bignumber("0");
 
-    addBody(x, y);
+				for (let j = 0; j < bodies.length; j++) {
+					if (i !== j) {
+						if (collision(bodies[i], bodies[j])) {
+							console.log(`Merging Body ${i} and Body ${j}`);
+							bodies[i] = mergeBodies(bodies[i], bodies[j]);
+							break;
+						} else {
+							const distance = calcDistance(bodies[i], bodies[j]);
+							const force = calcTotalForce(bodies[i], bodies[j], distance);
+							const angle = calcAngle(bodies[i], bodies[j]);
+
+							totalXForce = math.add(totalXForce, calcXForce(force, angle));
+							totalYForce = math.add(totalYForce, calcYForce(force, angle));
+						}
+					}
+				}
+
+				const totalHAcc = calcAcc(totalXForce, bodies[i].mass);
+				const totalVAcc = calcAcc(totalYForce, bodies[i].mass);
+
+				// Update velocities
+				bodies[i].hvelocity = math.add(
+					bodies[i].hvelocity,
+					math.multiply(totalHAcc, this.steptime),
+				);
+				bodies[i].vvelocity = math.add(
+					bodies[i].vvelocity,
+					math.multiply(totalVAcc, this.steptime),
+				);
+
+				// Update positions
+				const dx = math.multiply(bodies[i].hvelocity, this.steptime);
+				const dy = math.multiply(bodies[i].vvelocity, this.steptime);
+
+				bodies[i].position.subset(
+					math.index(0),
+					math.add(math.subset(bodies[i].position, math.index(0)), dx),
+				);
+				bodies[i].position.subset(
+					math.index(1),
+					math.add(math.subset(bodies[i].position, math.index(1)), dy),
+				);
+			}
+
+			// Remove merged bodies
+			bodies = bodies.filter((body) => !body.merged);
+
+			// Render the updated state
+			draw(this.canvas, bodies);
+		}
+	};
 }
 
-function clearBodies() {
-    bodies.length = 0;
+function mainloop(sim) {
+	try {
+		sim.step();
+	} catch (e) {
+		console.error(e);
+	}
+	window.requestAnimationFrame(() => mainloop(sim));
 }
 
-//Main code
-function body(r, m, x, y, hv, vv, ha, va, s) //r = radius, m = mass, x = x coord, y = y coord, hv = horizontal velocity, vv = vertical velocity, ha = horizontal acceleration, va = vertical acceleration, s = selected (bool)
-{
-    this.radius = r;
-    this.mass = m;
-    this.position = math.matrix([x, y]); //Indices: 0 = x, 1 = y
-    this.hvelocity = hv;
-    this.vvelocity = vv;
-    this.hacceleration = ha;
-    this.vacceleration = va;
-    this.colour = Please.make_color()[0];
-    this.ID = IDcount;
-    this.s = false; //TODO: implement selection colouring and functions
-    this.trajectory = new math.matrix();
-    IDcount++;
-}
+window.onload = function () {
+	const canvas = document.getElementById("canvas");
+	canvas.width = 800;
+	canvas.height = 800;
 
-/* TODO: It appears that when the more massive object is on the left,
-   massive objects on the right may be repelled. Look into and fix */
-function simulation(c, cc, b, t) //c = canvas, cc = chart, b = bodies, t = time between steps
-{
-    this.canvas = c;
-    this.steptime = t;
-    this.step = function() {
-        console.log("pants"); //Obligatory inclusion in rewrite
-        if (paused === false) {
-            for (var i = 0; i < b.length; i++) {
-                var totalVAcc = math.bignumber('0');
-                var totalHAcc = math.bignumber('0');
-                var trajectory = calcTrajectory(i, steptime); //NOTE: Trajectory can stay the same for sim, only need be recalculated if another body added
+	canvas.addEventListener("mousedown", (event) => {
+		// Get canvas position
+		const rect = canvas.getBoundingClientRect();
 
+		// Calculate the position relative to the canvas and apply scale
+		const x = math.multiply(event.clientX - rect.left, scale);
+		const y = math.multiply(event.clientY - rect.top, scale);
 
-                /*//logging
-                console.log("totalHAcc: " + math.format(totalHAcc) + " totalVAcc: " + math.format(totalVAcc));
-                console.log("Body IDs: " + b[i].ID + " " + b[j].ID);
-                console.log("X distance: " + math.format(math.subtract(math.subset(b[i].position, math.index(0)), math.subset(b[j].position, math.index(0)))));
-                console.log("Y distance: " + math.format(math.subtract(math.subset(b[i].position, math.index(1)), math.subset(b[j].position, math.index(1)))));
-                console.log("X component = " + xForce + ", Y component = " + yForce);
+		// Add a new body
+		const newBody = new body(
+			math.bignumber("10000000"), // Radius
+			math.bignumber("1e26"), // Mass
+			x, // X position
+			y, // Y position
+			math.bignumber("0"), // Initial horizontal velocity
+			math.bignumber("0"), // Initial vertical velocity
+			math.bignumber("0"), // Initial horizontal acceleration
+			math.bignumber("0"), // Initial vertical acceleration
+		);
 
-                //Graphing
-                if (graphWriteCount >= 10 && b[i].ID === 0) {
-                    cc.addData([parseInt(math.format(xForce))], labelCount);
-                    if (labelCount >= 600) {
-                        cc.removeData();
-                    }
-                    graphWriteCount = 0;
-                }*/
+		bodies.push(newBody); // Add the body to the array
+		console.log(`New body added at (${x}, ${y})`); // Debug log
+		console.log(bodies);
+	});
 
-                //v = u + at
-                //TODO: Change source of velocity to result of calcTrajectory
-                b[i].hvelocity = math.add(b[i].hvelocity, math.multiply(b[i].hacceleration, this.steptime));
-                b[i].vvelocity = math.add(b[i].vvelocity, math.multiply(b[i].vacceleration, this.steptime));
+	// Add initial bodies
+	const body1 = new body(
+		math.bignumber("15000000"),
+		math.bignumber("1e30"),
+		math.bignumber("200000000"),
+		math.bignumber("150000000"),
+		math.bignumber("0"),
+		math.bignumber("0"),
+		math.bignumber("0"),
+		math.bignumber("0"),
+	);
+	const body2 = new body(
+		math.bignumber("15000000"),
+		math.bignumber("1.5e29"),
+		math.bignumber("600000000"),
+		math.bignumber("250000000"),
+		math.bignumber("0"),
+		math.bignumber("0"),
+		math.bignumber("0"),
+		math.bignumber("0"),
+	);
 
-                b[i].position.subset(math.index(0), math.add(math.subset(b[i].position, math.index(0)), hdistance));
-                b[i].position.subset(math.index(1), math.add(math.subset(b[i].position, math.index(1)), vdistance));
-            }
+	bodies.push(body1, body2);
 
-            //Add 1 to counts
-            graphWriteCount++;
-            labelCount++;
-        }
-
-        //Draw function
-        draw(c, b);
-    };
-}
-
-
-function draw(c, b) //C = canvas, b = bodies (array)
-{
-    var context = c.getContext("2d");
-
-    //Clear old stuff:
-    context.clearRect(0, 0, c.width, c.height);
-
-    //Loop through bodies
-    for (var i = 0; i < b.length; i++) {
-        context.fillStyle = b[i].colour;
-        context.strokeStyle = b[i].colour;
-        context.beginPath();
-        context.arc(math.divide(math.subset(b[i].position, math.index(0)), scale), math.divide(math.subset(b[i].position, math.index(1)), scale), math.divide(b[i].radius, scale), 0, 2 * Math.PI);
-        context.lineWidth = 1;
-        context.fill();
-        context.stroke();
-    }
-}
-
-function mainloop(sim) //sim = a simulation
-{
-    try {
-        sim.step();
-    } catch (e) {
-        console.log(e);
-    }
-
-    window.requestAnimationFrame(function() {
-        mainloop(sim);
-    });
-}
-
-window.onload = function() {
-    canvas = document.getElementById("canvas");
-
-    canvas.addEventListener("mousedown", function(event) {
-        getPosition(canvas);
-    }, false);
-    chartCanvas = document.getElementById("chartCanvas");
-    chartContext = chartCanvas.getContext("2d");
-
-    var mainChart = new Chart(chartContext).Line(chartData);
-
-    //r, m, x, y, hv, vv, ha, va
-    var testBody = new body(math.bignumber('15000000'), math.bignumber('1e30'), math.bignumber('200000000'), math.bignumber('150000000'), math.bignumber('0'), math.bignumber('0'), math.bignumber('0'), math.bignumber('0'));
-    var testBody2 = new body(math.bignumber('15000000'), math.bignumber('1.5e29'), math.bignumber('600000000'), math.bignumber('250000000'), math.bignumber('0'), math.bignumber('0'), math.bignumber('0'), math.bignumber('0'));
-
-    bodies.push(testBody);
-    bodies.push(testBody2);
-    mainsim = new simulation(canvas, mainChart, bodies, 5);
-    window.requestAnimationFrame(function() {
-        mainloop(mainsim);
-    });
-
+	// Start the simulation
+	const sim = new simulation(canvas, bodies, 5);
+	mainloop(sim);
 };
