@@ -229,10 +229,7 @@ window.onload = function () {
 
 		// Add the body to the array
 		bodies.push(newBody);
-
-		// Log for debugging
-		console.log(`New body added at (${x}, ${y})`);
-		console.log(bodies);
+		draw(canvas, bodies);
 	});
 
 	bodies.push(
