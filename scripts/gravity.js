@@ -113,15 +113,15 @@ function mergeBodies(b1, b2) {
 	);
 	const newHVelocity = math.divide(
 		math.add(
-			math.multiply(b1.mass, b1.hvelocity),
-			math.multiply(b2.mass, b2.hvelocity),
+			math.multiply(b1.vvelocity, b1.mass),
+			math.multiply(b2.vvelocity, b2.mass),
 		),
 		newMass,
 	);
 	const newVVelocity = math.divide(
 		math.add(
-			math.multiply(b1.mass, b1.vvelocity),
-			math.multiply(b2.mass, b2.vvelocity),
+			math.multiply(b1.hvelocity, b1.mass),
+			math.multiply(b2.hvelocity, b2.mass),
 		),
 		newMass,
 	);
@@ -227,7 +227,6 @@ window.onload = function () {
 			math.bignumber("0"), // Initial vertical acceleration
 		);
 
-		// Add the body to the array
 		bodies.push(newBody);
 		draw(canvas, bodies);
 	});
@@ -236,7 +235,7 @@ window.onload = function () {
 		new body(
 			math.bignumber("15000000"),
 			math.bignumber("1e30"),
-			math.bignumber("200000000"),
+			math.bignumber("400000000"),
 			math.bignumber("150000000"),
 			math.bignumber("0"),
 			math.bignumber("0"),
@@ -245,7 +244,7 @@ window.onload = function () {
 		),
 		new body(
 			math.bignumber("15000000"),
-			math.bignumber("1.5e30"),
+			math.bignumber("1.5e31"),
 			math.bignumber("600000000"),
 			math.bignumber("250000000"),
 			math.bignumber("0"),
