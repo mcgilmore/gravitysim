@@ -208,7 +208,7 @@ function mainloop(sim) {
 window.onload = function () {
 	const canvas = document.getElementById("canvas");
 	canvas.width = 800;
-	canvas.height = 800;
+	canvas.height = 600;
 
 	canvas.addEventListener("mousedown", (event) => {
 		const rect = canvas.getBoundingClientRect();
