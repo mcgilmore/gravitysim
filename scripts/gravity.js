@@ -1,5 +1,5 @@
 math.config({
-	number: "bignumber",
+	number: "BigNumber",
 	precision: 30,
 });
 
@@ -9,7 +9,6 @@ const scale = math.bignumber("1000000"); // 1 pixel = 1,000 km
 let bodies = [];
 let IDcount = 0;
 let paused = false;
-let trajectoryLimit = 100;
 
 function calcDistance(b1, b2) {
 	const dx = math.subtract(
@@ -67,23 +66,19 @@ function body(radius, mass, x, y, hv, vv, ha, va) {
 	this.vacceleration = va;
 	this.colour = `hsl(${Math.random() * 360}, 100%, 50%)`;
 	this.ID = IDcount++;
+	this.merged = false;
 }
 
 function draw(c, b) {
 	const context = c.getContext("2d");
-	console.log("Bodies to draw:", b);
-	// Clear the canvas
 	context.clearRect(0, 0, c.width, c.height);
-
-	// Loop through bodies to draw them
-	for (let i = 0; i < b.length; i++) {
-		//console.log(`Drawing body ${i} at ${b[i].position}`);
-		context.fillStyle = b[i].colour;
+	for (const body of b) {
+		context.fillStyle = body.colour;
 		context.beginPath();
 		context.arc(
-			math.divide(math.subset(b[i].position, math.index(0)), scale), // X position
-			math.divide(math.subset(b[i].position, math.index(1)), scale), // Y position
-			math.divide(b[i].radius, scale), // Radius
+			Number(math.divide(math.subset(body.position, math.index(0)), scale)), // X position
+			Number(math.divide(math.subset(body.position, math.index(1)), scale)), // Y position
+			Number(math.divide(body.radius, scale)), // Radius
 			0,
 			2 * Math.PI,
 		);
@@ -97,39 +92,33 @@ function collision(b1, b2) {
 }
 
 function mergeBodies(b1, b2) {
-	console.log(`Merging Body ${b1.ID} and Body ${b2.ID}`);
-	b2.merged = true;
-
-	// Calculate new mass
-	var newMass = math.add(b1.mass, b2.mass);
-
-	// Calculate new position using the weighted average of the two positions based on mass
-	var newX = math.divide(
+	const newRadius = math.pow(
+		math.add(math.pow(b1.radius, 3), math.pow(b2.radius, 3)),
+		math.divide(1, 3),
+	);
+	const newMass = math.add(b1.mass, b2.mass);
+	const newX = math.divide(
 		math.add(
 			math.multiply(b1.mass, math.subset(b1.position, math.index(0))),
 			math.multiply(b2.mass, math.subset(b2.position, math.index(0))),
 		),
 		newMass,
 	);
-
-	var newY = math.divide(
+	const newY = math.divide(
 		math.add(
 			math.multiply(b1.mass, math.subset(b1.position, math.index(1))),
 			math.multiply(b2.mass, math.subset(b2.position, math.index(1))),
 		),
 		newMass,
 	);
-
-	// Calculate new velocity based on the conservation of momentum
-	var newHVelocity = math.divide(
+	const newHVelocity = math.divide(
 		math.add(
 			math.multiply(b1.mass, b1.hvelocity),
 			math.multiply(b2.mass, b2.hvelocity),
 		),
 		newMass,
 	);
-
-	var newVVelocity = math.divide(
+	const newVVelocity = math.divide(
 		math.add(
 			math.multiply(b1.mass, b1.vvelocity),
 			math.multiply(b2.mass, b2.vvelocity),
@@ -137,47 +126,36 @@ function mergeBodies(b1, b2) {
 		newMass,
 	);
 
-	// Set new acceleration to the average of the two bodies, or 0 if not defined
-	var newHAcceleration = math.divide(
-		math.add(b1.hacceleration, b2.hacceleration),
-		2,
-	);
-	var newVAcceleration = math.divide(
-		math.add(b1.vacceleration, b2.vacceleration),
-		2,
-	);
-
-	// Create a new body that represents the merged result
-	var mergedBody = new body(
-		b1.radius + b2.radius, // Merge the radii
+	return new body(
+		newRadius,
 		newMass,
-		math.matrix([newX, newY]),
-		newHVelocity, // Use the new horizontal velocity
-		newVVelocity, // Use the new vertical velocity
-		newHAcceleration, // Use the new horizontal acceleration
-		newVAcceleration, // Use the new vertical acceleration
-		(colour = `hsl(${Math.random() * 360}, 100%, 50%)`),
-		(this.ID = IDcount++),
-		(merged = false),
+		newX,
+		newY,
+		newHVelocity,
+		newVVelocity,
+		math.bignumber("0"),
+		math.bignumber("0"),
 	);
-	return mergedBody;
 }
 
-function simulation(canvas, bodies, steptime) {
+function simulation(canvas, steptime) {
 	this.canvas = canvas;
 	this.steptime = steptime;
 
 	this.step = function () {
 		if (!paused) {
 			for (let i = 0; i < bodies.length; i++) {
+				if (bodies[i].merged) continue;
+
 				let totalXForce = math.bignumber("0");
 				let totalYForce = math.bignumber("0");
 
 				for (let j = 0; j < bodies.length; j++) {
-					if (i !== j) {
+					if (i !== j && !bodies[j].merged) {
 						if (collision(bodies[i], bodies[j])) {
-							console.log(`Merging Body ${i} and Body ${j}`);
-							bodies[i] = mergeBodies(bodies[i], bodies[j]);
+							bodies.push(mergeBodies(bodies[i], bodies[j]));
+							bodies[j].merged = true;
+							bodies[i].merged = true;
 							break;
 						} else {
 							const distance = calcDistance(bodies[i], bodies[j]);
@@ -190,49 +168,41 @@ function simulation(canvas, bodies, steptime) {
 					}
 				}
 
-				const totalHAcc = calcAcc(totalXForce, bodies[i].mass);
-				const totalVAcc = calcAcc(totalYForce, bodies[i].mass);
+				if (!bodies[i].merged) {
+					const totalHAcc = calcAcc(totalXForce, bodies[i].mass);
+					const totalVAcc = calcAcc(totalYForce, bodies[i].mass);
 
-				// Update velocities
-				bodies[i].hvelocity = math.add(
-					bodies[i].hvelocity,
-					math.multiply(totalHAcc, this.steptime),
-				);
-				bodies[i].vvelocity = math.add(
-					bodies[i].vvelocity,
-					math.multiply(totalVAcc, this.steptime),
-				);
+					bodies[i].hvelocity = math.add(
+						bodies[i].hvelocity,
+						math.multiply(totalHAcc, this.steptime),
+					);
+					bodies[i].vvelocity = math.add(
+						bodies[i].vvelocity,
+						math.multiply(totalVAcc, this.steptime),
+					);
 
-				// Update positions
-				const dx = math.multiply(bodies[i].hvelocity, this.steptime);
-				const dy = math.multiply(bodies[i].vvelocity, this.steptime);
+					const dx = math.multiply(bodies[i].hvelocity, this.steptime);
+					const dy = math.multiply(bodies[i].vvelocity, this.steptime);
 
-				bodies[i].position.subset(
-					math.index(0),
-					math.add(math.subset(bodies[i].position, math.index(0)), dx),
-				);
-				bodies[i].position.subset(
-					math.index(1),
-					math.add(math.subset(bodies[i].position, math.index(1)), dy),
-				);
+					bodies[i].position.subset(
+						math.index(0),
+						math.add(math.subset(bodies[i].position, math.index(0)), dx),
+					);
+					bodies[i].position.subset(
+						math.index(1),
+						math.add(math.subset(bodies[i].position, math.index(1)), dy),
+					);
+				}
 			}
-
-			// Remove merged bodies
-			bodies = bodies.filter((body) => !body.merged);
-
-			// Render the updated state
+			bodies = bodies.filter((b) => !b.merged);
 			draw(this.canvas, bodies);
 		}
 	};
 }
 
 function mainloop(sim) {
-	try {
-		sim.step();
-	} catch (e) {
-		console.error(e);
-	}
-	window.requestAnimationFrame(() => mainloop(sim));
+	sim.step();
+	requestAnimationFrame(() => mainloop(sim));
 }
 
 window.onload = function () {
@@ -241,17 +211,14 @@ window.onload = function () {
 	canvas.height = 800;
 
 	canvas.addEventListener("mousedown", (event) => {
-		// Get canvas position
 		const rect = canvas.getBoundingClientRect();
-
-		// Calculate the position relative to the canvas and apply scale
 		const x = math.multiply(event.clientX - rect.left, scale);
 		const y = math.multiply(event.clientY - rect.top, scale);
 
-		// Add a new body
+		// Create a new body
 		const newBody = new body(
-			math.bignumber("10000000"), // Radius
-			math.bignumber("1e26"), // Mass
+			math.bignumber("20000000"), // Radius
+			math.bignumber("1e30"), // Mass
 			x, // X position
 			y, // Y position
 			math.bignumber("0"), // Initial horizontal velocity
@@ -260,36 +227,37 @@ window.onload = function () {
 			math.bignumber("0"), // Initial vertical acceleration
 		);
 
-		bodies.push(newBody); // Add the body to the array
-		console.log(`New body added at (${x}, ${y})`); // Debug log
+		// Add the body to the array
+		bodies.push(newBody);
+
+		// Log for debugging
+		console.log(`New body added at (${x}, ${y})`);
 		console.log(bodies);
 	});
 
-	// Add initial bodies
-	const body1 = new body(
-		math.bignumber("15000000"),
-		math.bignumber("1e30"),
-		math.bignumber("200000000"),
-		math.bignumber("150000000"),
-		math.bignumber("0"),
-		math.bignumber("0"),
-		math.bignumber("0"),
-		math.bignumber("0"),
-	);
-	const body2 = new body(
-		math.bignumber("15000000"),
-		math.bignumber("1.5e29"),
-		math.bignumber("600000000"),
-		math.bignumber("250000000"),
-		math.bignumber("0"),
-		math.bignumber("0"),
-		math.bignumber("0"),
-		math.bignumber("0"),
+	bodies.push(
+		new body(
+			math.bignumber("15000000"),
+			math.bignumber("1e30"),
+			math.bignumber("200000000"),
+			math.bignumber("150000000"),
+			math.bignumber("0"),
+			math.bignumber("0"),
+			math.bignumber("0"),
+			math.bignumber("0"),
+		),
+		new body(
+			math.bignumber("15000000"),
+			math.bignumber("1.5e30"),
+			math.bignumber("600000000"),
+			math.bignumber("250000000"),
+			math.bignumber("0"),
+			math.bignumber("0"),
+			math.bignumber("0"),
+			math.bignumber("0"),
+		),
 	);
 
-	bodies.push(body1, body2);
-
-	// Start the simulation
-	const sim = new simulation(canvas, bodies, 5);
+	const sim = new simulation(canvas, 5);
 	mainloop(sim);
 };
