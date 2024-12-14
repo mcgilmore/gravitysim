@@ -1,109 +1,134 @@
 body {
-	background-color: rgba(22, 26, 29, 1.0);
+	background-color: rgba(22, 26, 29, 1);
 }
 
 /* SIDEBAR */
 
 .sidebar {
-  float: left;
-  height: 100%;
-  overflow: hidden;
-  position: fixed;
-  width: 50px;
-  white-space: nowrap;
+	float: left;
+	height: 100%;
+	overflow: hidden;
+	position: fixed;
+	width: 50px;
+	white-space: nowrap;
 
-  background: rgba(13, 19, 27, 1);
-  font-size: 0;
+	background: rgba(13, 19, 27, 1);
+	font-size: 0;
 
-  transition: all 0.36s ease-in-out;
-  -webkit-transition: all 0.36s ease-in-out;
+	transition: all 0.36s ease-in-out;
+	-webkit-transition: all 0.36s ease-in-out;
 }
 
 .sidebar:hover {
-  width: 250px;
+	width: 250px;
 }
 
 .settings-wheel {
-  display: inline-block;
-  height: 50px;
-  padding-left: 8px;
-  padding-top: 6px;
-  vertical-align: top;
-  width: 50px;
+	display: inline-block;
+	height: 50px;
+	padding-left: 8px;
+	padding-top: 6px;
+	vertical-align: top;
+	width: 50px;
 }
 
 .fa-cog {
-  color: rgba(64, 64, 87, 1);
-  font-size: 40px;
+	color: rgba(64, 64, 87, 1);
+	font-size: 40px;
 }
 
 .settings-panel {
-  display: inline-block;
-  height: 100%;
-  width: 200px;
+	display: inline-block;
+	height: 100%;
+	width: 200px;
 
-  background: rgba(15, 23, 34, 1);
+	background: rgba(15, 23, 34, 1);
 }
 
 .settings-component {
-  height: 50px;
-  line-height: 50px;
-  padding-left: 10px;
+	height: 50px;
+	line-height: 50px;
+	padding-left: 10px;
 
-  transition: all 0.1s ease-in-out;
+	transition: all 0.1s ease-in-out;
 }
 
 .settings-component:hover {
-  background-color: rgba(33, 51, 75, 1.0);
-  cursor: pointer;
-  padding-left: 15px;
+	background-color: rgba(33, 51, 75, 1);
+	cursor: pointer;
+	padding-left: 15px;
 }
 
 .settings-component.no-hover:hover {
-  background-color: transparent;
-  cursor: default;
-  padding-left: 10px;
+	background-color: transparent;
+	cursor: default;
+	padding-left: 10px;
 }
 
 .settings-header {
-  vertical-align: middle;
+	vertical-align: middle;
 
-  color: ghostwhite;
-  font-size: 30px;
-  line-height: normal;
+	color: ghostwhite;
+	font-size: 30px;
+	line-height: normal;
 }
 
 .settings-header:hover {
-  background-color: transparent;
+	background-color: transparent;
 }
 
 .settings-option {
-  vertical-align: middle;
-
-  color: ghostwhite;
-  cursor: pointer;
-  font-size: 12px;
+	vertical-align: middle;
+	color: ghostwhite;
+	cursor: pointer;
+	font-size: 12px;
 }
 
 /* MAIN CONTENT */
 
 .container {
-  transition: margin-left 0.36s ease-in-out;
-  -webkit-transition: margin-left 0.36s ease-in-out;
+	transition: margin-left 0.36s ease-in-out;
+	-webkit-transition: margin-left 0.36s ease-in-out;
+	align-items: center;
 }
 
 .content-container {
-  width: 800px;
+	width: 800px;
+	align-items: center;
 }
 
 .content-title {
-  color: white;
+	color: white;
 }
 
 .content-footer {
-  color: white;
+	color: white;
+	display: flex; /* Use flexbox for alignment */
+	justify-content: space-between; /* Space between inputs and icon */
+	align-items: center; /* Vertically align items */
+	padding: 10px; /* Add padding for spacing */
+}
+
+.footer-container {
+	display: flex;
+	width: 100%;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.footer-inputs label,
+.footer-inputs input {
+	margin-right: 10px; /* Add spacing between inputs */
+}
+
+.footer-icon a img {
+	display: block;
+}
+
+input {
+	color: #a6a5a4;
 }
 
 #canvas {
-  background-color: rgba(17, 19, 26, 1.0);
+	background-color: rgba(17, 19, 26, 1);
 }

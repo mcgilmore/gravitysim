@@ -51,11 +51,33 @@
 				<!--<canvas id="chartCanvas" class="center-block" width="800" height="200"></canvas>-->
 
 				<footer class="content-footer">
-					<p class="pull-right">
-						<a href="https://github.com/mcgilmore/gravitysim">
-							https://github.com/mcgilmore/gravitysim
-						</a>
-					</p>
+					<div class="footer-container">
+						<div class="footer-inputs">
+							<label for="massInput">Mass (kg):</label>
+							<input
+								id="massInput"
+								type="text"
+								value="5e27"
+								step="any"
+							/>
+							<label for="sizeInput">Radius (m):</label>
+							<input
+								id="sizeInput"
+								type="text"
+								value="20000000"
+								step="any"
+							/>
+						</div>
+						<div class="footer-icon">
+							<a href="https://github.com/mcgilmore/gravitysim">
+								<img
+									src="images/github-mark-white.svg"
+									alt="GitHub"
+									style="width: 20px; height: 20px"
+								/>
+							</a>
+						</div>
+					</div>
 				</footer>
 			</div>
 		</div>

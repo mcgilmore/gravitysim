@@ -35,6 +35,7 @@ function print() {
 
 function clear() {
 	bodies = [];
+	draw(canvas, bodies);
 }
 
 function pause() {

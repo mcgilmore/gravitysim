@@ -214,11 +214,12 @@ window.onload = function () {
 		const rect = canvas.getBoundingClientRect();
 		const x = math.multiply(event.clientX - rect.left, scale);
 		const y = math.multiply(event.clientY - rect.top, scale);
-
+		const mass = math.bignumber(massInput.value);
+		const radius = math.bignumber(sizeInput.value);
 		// Create a new body
 		const newBody = new body(
-			math.bignumber("20000000"), // Radius
-			math.bignumber("1e30"), // Mass
+			radius, // Radius
+			mass, // Mass
 			x, // X position
 			y, // Y position
 			math.bignumber("0"), // Initial horizontal velocity
@@ -233,8 +234,8 @@ window.onload = function () {
 
 	bodies.push(
 		new body(
-			math.bignumber("15000000"),
-			math.bignumber("1e30"),
+			math.bignumber("10000000"),
+			math.bignumber("1e28"),
 			math.bignumber("400000000"),
 			math.bignumber("150000000"),
 			math.bignumber("0"),
@@ -244,7 +245,7 @@ window.onload = function () {
 		),
 		new body(
 			math.bignumber("15000000"),
-			math.bignumber("1.5e31"),
+			math.bignumber("1.5e28"),
 			math.bignumber("600000000"),
 			math.bignumber("250000000"),
 			math.bignumber("0"),
