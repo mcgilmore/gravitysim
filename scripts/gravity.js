@@ -253,8 +253,8 @@ window.onload = function () {
 
 	canvas.addEventListener("mousedown", (event) => {
 		const rect = canvas.getBoundingClientRect();
-		dragStartX = event.clientX - rect.left - offsetX; // Store the initial drag position
-		dragStartY = event.clientY - rect.top - offsetY;
+		dragStartX = event.clientX - rect.left; // Store the initial drag position
+		dragStartY = event.clientY - rect.top;
 		mouseDown = true;
 	});
 
