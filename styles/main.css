@@ -67,7 +67,6 @@ body {
 
 .settings-header {
 	vertical-align: middle;
-
 	color: ghostwhite;
 	font-size: 30px;
 	line-height: normal;
@@ -127,6 +126,10 @@ body {
 
 input {
 	color: #a6a5a4;
+}
+
+input[type="text"] {
+	width: 80px; /* Adjust to your desired width */
 }
 
 #canvas {

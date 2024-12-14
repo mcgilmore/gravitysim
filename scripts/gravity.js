@@ -4,7 +4,7 @@ math.config({
 });
 
 const G = math.bignumber("6.67384e-11");
-const scale = math.bignumber("1000000"); // 1 pixel = 1,000 km
+var scale = math.bignumber("1000000"); // 1 pixel = 1,000 km
 
 let bodies = [];
 let IDcount = 0;
@@ -70,6 +70,7 @@ function body(radius, mass, x, y, hv, vv, ha, va) {
 }
 
 function draw(c, b) {
+	scale = math.bignumber(scaleInput.value);
 	const context = c.getContext("2d");
 	context.clearRect(0, 0, c.width, c.height);
 	for (const body of b) {
