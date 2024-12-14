@@ -19,6 +19,7 @@ let dragStartY = 0;
 let offsetX = 0;
 let offsetY = 0;
 let dragThreshold = 5; // Minimum distance to count as a drag
+const scaleFactor = math.bignumber("50000"); //Zooming scaling factor
 
 function calcDistance(b1, b2) {
 	const dx = math.subtract(
@@ -151,6 +152,33 @@ function mergeBodies(b1, b2) {
 	);
 }
 
+// Function to update the scale
+function adjustScale(delta, cursorX, cursorY) {
+	if (delta > 0) {
+		// Zoom in
+		scale = math.add(scale, scaleFactor);
+	} else {
+		// Zoom out
+		scale = math.subtract(scale, scaleFactor);
+	}
+
+	document.getElementById("scaleInput").value = scale.toString(); //Set the scaleinput text as the new scale
+
+	/*
+	// Adjust the offset to zoom around the cursor position
+	offsetX = math.subtract(
+		offsetX,
+		math.multiply(cursorX, math.subtract(scaleFactor, 1)),
+	);
+	offsetY = math.subtract(
+		offsetY,
+		math.multiply(cursorY, math.subtract(scaleFactor, 1)),
+		);*/
+
+	// Redraw the canvas with the updated scale
+	draw(canvas, bodies);
+}
+
 function simulation(canvas, steptime) {
 	this.canvas = canvas;
 	this.steptime = steptime;
@@ -242,8 +270,8 @@ window.onload = function () {
 				Math.abs(currentY - dragStartY) > dragThreshold
 			) {
 				isDragging = true; // User is dragging
-				offsetX += currentX - dragStartX; // Update offset
-				offsetY += currentY - dragStartY;
+				offsetX -= currentX - dragStartX; // Update offset
+				offsetY -= currentY - dragStartY;
 				dragStartX = currentX; // Reset drag start point
 				dragStartY = currentY;
 
@@ -279,6 +307,19 @@ window.onload = function () {
 
 		mouseDown = false;
 		isDragging = false; // Reset dragging state
+	});
+
+	// Add wheel event listener to the canvas
+	canvas.addEventListener("wheel", (event) => {
+		event.preventDefault(); // Prevent the default scrolling behavior
+
+		// Get the position of the mouse relative to the canvas
+		const rect = canvas.getBoundingClientRect();
+		const cursorX = event.clientX - rect.left;
+		const cursorY = event.clientY - rect.top;
+
+		// Adjust the scale and offset based on the scroll direction
+		adjustScale(event.deltaY, cursorX, cursorY);
 	});
 
 	//Add some default bodies
