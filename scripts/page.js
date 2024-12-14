@@ -26,6 +26,9 @@ setting.on("click", function (e) {
 		case "pause":
 			pause();
 			break;
+		case "solar":
+			solarSystem();
+			break;
 		default:
 			break;
 	}
@@ -47,4 +50,10 @@ function pause() {
 	} else {
 		document.getElementById("settings-option").innerHTML = "Resume Simualtion";
 	}
+}
+
+function solarSystem() {
+	bodies = solarsystem;
+	//TODO:Set appropriate scale and position etc
+	draw(canvas, bodies);
 }
