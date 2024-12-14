@@ -14,7 +14,9 @@ setting.on("click", function (e) {
 	var node = $(e.currentTarget),
 		action = node.data("action");
 
-	switch (action) {
+	switch (
+		action //TODO: Add Solar system option which creates solar system in canvas
+	) {
 		case "print":
 			print();
 			break;
