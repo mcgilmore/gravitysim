@@ -6,9 +6,19 @@ math.config({
 const G = math.bignumber("6.67384e-11");
 var scale = math.bignumber("1000000"); // 1 pixel = 1,000 km
 
+//Simulation values
 let bodies = [];
 let IDcount = 0;
 let paused = false;
+
+//Dragging values
+let isDragging = false;
+let mouseDown = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let offsetX = 0;
+let offsetY = 0;
+let dragThreshold = 5; // Minimum distance to count as a drag
 
 function calcDistance(b1, b2) {
 	const dx = math.subtract(
@@ -77,8 +87,10 @@ function draw(c, b) {
 		context.fillStyle = body.colour;
 		context.beginPath();
 		context.arc(
-			Number(math.divide(math.subset(body.position, math.index(0)), scale)), // X position
-			Number(math.divide(math.subset(body.position, math.index(1)), scale)), // Y position
+			Number(math.divide(math.subset(body.position, math.index(0)), scale)) -
+				offsetX, // X position
+			Number(math.divide(math.subset(body.position, math.index(1)), scale)) -
+				offsetY, // Y position
 			Number(math.divide(body.radius, scale)), // Radius
 			0,
 			2 * Math.PI,
@@ -213,26 +225,63 @@ window.onload = function () {
 
 	canvas.addEventListener("mousedown", (event) => {
 		const rect = canvas.getBoundingClientRect();
-		const x = math.multiply(event.clientX - rect.left, scale);
-		const y = math.multiply(event.clientY - rect.top, scale);
-		const mass = math.bignumber(massInput.value);
-		const radius = math.bignumber(sizeInput.value);
-		// Create a new body
-		const newBody = new body(
-			radius, // Radius
-			mass, // Mass
-			x, // X position
-			y, // Y position
-			math.bignumber("0"), // Initial horizontal velocity
-			math.bignumber("0"), // Initial vertical velocity
-			math.bignumber("0"), // Initial horizontal acceleration
-			math.bignumber("0"), // Initial vertical acceleration
-		);
-
-		bodies.push(newBody);
-		draw(canvas, bodies);
+		dragStartX = event.clientX - rect.left - offsetX; // Store the initial drag position
+		dragStartY = event.clientY - rect.top - offsetY;
+		mouseDown = true;
 	});
 
+	canvas.addEventListener("mousemove", (event) => {
+		if (mouseDown) {
+			const rect = canvas.getBoundingClientRect();
+			const currentX = event.clientX - rect.left;
+			const currentY = event.clientY - rect.top;
+
+			// Check if mouse movement exceeds the drag threshold
+			if (
+				Math.abs(currentX - dragStartX) > dragThreshold ||
+				Math.abs(currentY - dragStartY) > dragThreshold
+			) {
+				isDragging = true; // User is dragging
+				offsetX += currentX - dragStartX; // Update offset
+				offsetY += currentY - dragStartY;
+				dragStartX = currentX; // Reset drag start point
+				dragStartY = currentY;
+
+				// Redraw the canvas with the updated offsets
+				draw(canvas, bodies);
+			}
+		}
+	});
+
+	canvas.addEventListener("mouseup", (event) => {
+		if (!isDragging) {
+			// If no drag occurred, treat it as a click to add a body
+			const rect = canvas.getBoundingClientRect();
+			const x = math.multiply(event.clientX - rect.left + offsetX, scale); // Adjust by offset
+			const y = math.multiply(event.clientY - rect.top + offsetY, scale);
+			const mass = math.bignumber(massInput.value);
+			const radius = math.bignumber(sizeInput.value);
+			// Create a new body
+			const newBody = new body(
+				radius, // Radius
+				mass, // Mass
+				x, // X position
+				y, // Y position
+				math.bignumber("0"), // Initial horizontal velocity
+				math.bignumber("0"), // Initial vertical velocity
+				math.bignumber("0"), // Initial horizontal acceleration
+				math.bignumber("0"), // Initial vertical acceleration
+			);
+
+			bodies.push(newBody);
+			draw(canvas, bodies);
+		}
+
+		mouseDown = false;
+		isDragging = false; // Reset dragging state
+	});
+
+	//Add some default bodies
 	bodies.push(
 		new body(
 			math.bignumber("10000000"),
