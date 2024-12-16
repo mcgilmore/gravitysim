@@ -152,7 +152,7 @@ function mergeBodies(b1, b2) {
 	);
 }
 
-// Function to update the scale
+// Function to update the scale on scrolling
 function adjustScale(delta, cursorX, cursorY) {
 	if (delta > 0) {
 		// Zoom in
@@ -177,6 +177,18 @@ function adjustScale(delta, cursorX, cursorY) {
 
 	// Redraw the canvas with the updated scale
 	draw(canvas, bodies);
+}
+
+function setScale(newScale) {
+	scale = newScale;
+	document.getElementById("scaleInput").value = scale.toString();
+	draw(canvas, bodies);
+}
+
+function resizeCanvas() {
+	canvas.width = window.innerWidth; // Set canvas width to viewport width
+	canvas.height = window.innerHeight - 40; // Set canvas height to viewport height
+	draw(canvas, bodies); // Redraw the canvas after resizing
 }
 
 function simulation(canvas, steptime) {
@@ -248,8 +260,11 @@ function mainloop(sim) {
 
 window.onload = function () {
 	const canvas = document.getElementById("canvas");
-	canvas.width = 800;
-	canvas.height = 600;
+	const footer = document.querySelector(".content-footer");
+
+	resizeCanvas();
+
+	window.addEventListener("resize", resizeCanvas);
 
 	canvas.addEventListener("mousedown", (event) => {
 		const rect = canvas.getBoundingClientRect();
@@ -346,6 +361,6 @@ window.onload = function () {
 		),
 	);
 
-	const sim = new simulation(canvas, 5);
+	const sim = new simulation(canvas, 1);
 	mainloop(sim);
 };

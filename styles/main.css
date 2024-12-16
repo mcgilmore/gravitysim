@@ -89,10 +89,11 @@ body {
 	transition: margin-left 0.36s ease-in-out;
 	-webkit-transition: margin-left 0.36s ease-in-out;
 	align-items: center;
+	margin-left: 50px;
 }
 
 .content-container {
-	width: 800px;
+	width: 100%;
 	align-items: center;
 }
 
@@ -120,8 +121,13 @@ body {
 	margin-right: 10px; /* Add spacing between inputs */
 }
 
-.footer-icon a img {
-	display: block;
+.github-icon {
+    position: fixed;
+    bottom: 10px; /* Adjust distance from the bottom edge */
+    right: 10px; /* Adjust distance from the right edge */
+    width: 20px; /* Set size of the icon */
+    height: 20px;
+    z-index: 1000; /* Ensure it stays on top of other elements */
 }
 
 input {
