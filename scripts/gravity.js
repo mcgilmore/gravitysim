@@ -108,7 +108,7 @@ function collision(b1, b2) {
 function mergeBodies(b1, b2) {
 	const newRadius = math.pow(
 		math.add(math.pow(b1.radius, 3), math.pow(b2.radius, 3)),
-		math.divide(1, 3),
+		math.bignumber(math.divide(1, 3)),
 	);
 	const newMass = math.add(b1.mass, b2.mass);
 	const newX = math.divide(
