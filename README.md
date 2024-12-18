@@ -1,9 +1,5 @@
 gravitysim
 ==========
-Gravity simulator in JS
+Simple 2D gravity simulator in JS
 
 Available at http://mcgilmore.github.io/gravitysim/
-
-Notes
------
-- Doesn't work properly

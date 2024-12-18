@@ -342,7 +342,7 @@ window.onload = function () {
 			math.bignumber("1e28"),
 			math.bignumber("400000000"),
 			math.bignumber("150000000"),
-			math.bignumber("0"),
+			math.bignumber("80000"),
 			math.bignumber("0"),
 			math.bignumber("0"),
 			math.bignumber("0"),
@@ -352,13 +352,13 @@ window.onload = function () {
 			math.bignumber("1.5e28"),
 			math.bignumber("600000000"),
 			math.bignumber("250000000"),
-			math.bignumber("0"),
+			math.bignumber("-30000"),
 			math.bignumber("0"),
 			math.bignumber("0"),
 			math.bignumber("0"),
 		),
 	);
 
-	const sim = new simulation(canvas, 1);
+	const sim = new simulation(canvas, 5);
 	mainloop(sim);
 };
