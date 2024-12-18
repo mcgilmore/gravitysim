@@ -56,6 +56,8 @@ function solarSystem() {
 	bodies = [];
 	solarsystem.forEach((planet) => bodies.push(planet));
 	setScale(math.bignumber("25000000"));
+	offsetX = 0;
+	offsetY = 0;
 	//TODO:Set appropriate scale and position etc
 	//draw(canvas, bodies);
 }

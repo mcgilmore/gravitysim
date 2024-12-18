@@ -1,6 +1,6 @@
 math.config({
 	number: "BigNumber",
-	precision: 30,
+	precision: 64,
 });
 
 const G = math.bignumber("6.67384e-11");
@@ -8,7 +8,6 @@ var scale = math.bignumber("1000000"); // 1 pixel = 1,000 km
 
 //Simulation values
 let bodies = [];
-let IDcount = 0;
 let paused = false;
 
 //Dragging values
@@ -76,11 +75,10 @@ function body(radius, mass, x, y, hv, vv, ha, va) {
 	this.hacceleration = ha;
 	this.vacceleration = va;
 	this.colour = `hsl(${Math.random() * 360}, 100%, 50%)`;
-	this.ID = IDcount++;
 	this.merged = false;
 }
 
-function draw(c, b) {
+function draw(c, b) { //TODO: speed up drawing by only including those in the view window
 	scale = math.bignumber(scaleInput.value);
 	const context = c.getContext("2d");
 	context.clearRect(0, 0, c.width, c.height);
