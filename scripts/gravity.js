@@ -359,6 +359,6 @@ window.onload = function () {
 		),
 	);
 
-	const sim = new simulation(canvas, 5);
+	const sim = new simulation(canvas, 2); //One step = 2 seconds. At 60 Hz, one IRL second = 120 simulated seconds
 	mainloop(sim);
 };
